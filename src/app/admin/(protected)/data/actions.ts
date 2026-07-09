@@ -18,8 +18,9 @@ export async function updateData(formData: FormData) {
     .single();
   if (!business) redirect("/admin/login");
 
-  const whatsapp = String(formData.get("whatsapp") ?? "").trim() || null;
-  const location = String(formData.get("location") ?? "").trim() || null;
+  // Solo dígitos: es lo que espera el link https://wa.me/<numero>.
+  const whatsapp = String(formData.get("whatsapp") ?? "").replace(/\D/g, "").slice(0, 20) || null;
+  const location = String(formData.get("location") ?? "").trim().slice(0, 200) || null;
 
   await supabase.from("businesses").update({ whatsapp, location }).eq("id", business.id);
 

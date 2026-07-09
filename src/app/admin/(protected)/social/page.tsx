@@ -3,7 +3,12 @@ import { Trash2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { addSocialLink, deleteSocialLink } from "./actions";
 
-export default async function AdminSocialPage() {
+export default async function AdminSocialPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ error?: string }>;
+}) {
+  const { error } = await searchParams;
   const supabase = await createClient();
   const {
     data: { user },
@@ -31,6 +36,10 @@ export default async function AdminSocialPage() {
           Se muestran como enlaces en el pie de tu menú público.
         </p>
       </div>
+
+      {error && (
+        <p className="text-red-700 text-sm bg-red-50 rounded-lg px-3 py-2">{error}</p>
+      )}
 
       <div className="flex flex-col gap-2">
         {(socialLinks ?? []).length === 0 && (

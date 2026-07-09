@@ -20,12 +20,25 @@ async function getOwnedBusiness(supabase: Awaited<ReturnType<typeof createClient
   return business;
 }
 
+// Solo http(s): evita guardar esquemas peligrosos (ej. "javascript:...") que
+// se ejecutarían al hacer clic en el link desde el menú público.
+function safeHttpUrl(raw: string): string | null {
+  try {
+    const url = new URL(raw);
+    return url.protocol === "http:" || url.protocol === "https:" ? url.toString() : null;
+  } catch {
+    return null;
+  }
+}
+
 export async function addSocialLink(formData: FormData) {
   const supabase = await createClient();
   const business = await getOwnedBusiness(supabase);
-  const platform = String(formData.get("platform") ?? "").trim();
-  const url = String(formData.get("url") ?? "").trim();
-  if (!platform || !url) redirect("/admin/social");
+  const platform = String(formData.get("platform") ?? "").trim().slice(0, 40);
+  const url = safeHttpUrl(String(formData.get("url") ?? "").trim());
+  if (!platform || !url) {
+    redirect(`/admin/social?error=${encodeURIComponent("La URL debe empezar con http:// o https://")}`);
+  }
 
   await supabase.from("social_links").insert({ business_id: business.id, platform, url });
 

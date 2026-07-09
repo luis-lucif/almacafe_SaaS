@@ -28,7 +28,7 @@ async function getOwnedBusiness(supabase: Awaited<ReturnType<typeof createClient
 export async function createCategory(formData: FormData) {
   const supabase = await createClient();
   const business = await getOwnedBusiness(supabase);
-  const name = String(formData.get("name") ?? "").trim();
+  const name = String(formData.get("name") ?? "").trim().slice(0, 80);
   if (!name) redirect("/admin/products");
 
   const sectionRaw = String(formData.get("section") ?? "productos");
@@ -58,10 +58,26 @@ export async function createProduct(formData: FormData) {
   const business = await getOwnedBusiness(supabase);
 
   const category_id = String(formData.get("category_id") ?? "");
-  const name = String(formData.get("name") ?? "").trim();
-  const description = String(formData.get("description") ?? "").trim() || null;
+  // La categoría debe pertenecer a este negocio: sin este chequeo, alguien
+  // podría mandar el id de una categoría de otro negocio y su producto
+  // terminaría apareciendo en el menú público de ese otro negocio.
+  const { data: category } = await supabase
+    .from("categories")
+    .select("id")
+    .eq("id", category_id)
+    .eq("business_id", business.id)
+    .single();
+  if (!category) {
+    redirect(`/admin/products?error=${encodeURIComponent("Categoría inválida.")}`);
+  }
+
+  const name = String(formData.get("name") ?? "").trim().slice(0, 120);
+  const description = String(formData.get("description") ?? "").trim().slice(0, 500) || null;
   const priceRaw = String(formData.get("price") ?? "").trim();
   const price = priceRaw ? Number(priceRaw) : null;
+  if (price !== null && (!Number.isFinite(price) || price < 0 || price > 10_000_000)) {
+    redirect(`/admin/products?error=${encodeURIComponent("Precio inválido.")}`);
+  }
 
   let image_url: string | null = null;
   const image = formData.get("image");

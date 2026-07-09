@@ -23,6 +23,10 @@ function getPlatformIcon(platform: string): string | null {
   return PLATFORM_ICON_MAP[key] ?? null;
 }
 
+// Defensa en profundidad: solo se renderizan links http(s), aunque ya se
+// validen al guardarlos (ver social/actions.ts).
+const isSafeHttpUrl = (url: string) => /^https?:\/\//i.test(url);
+
 function getSectionStyle(section: string) {
   switch (section) {
     case "menu_del_dia":
@@ -66,6 +70,7 @@ export function MenuView({
   categories: Category[];
   socialLinks: SocialLink[];
 }) {
+  const safeSocialLinks = socialLinks.filter((link) => isSafeHttpUrl(link.url));
   const [lightbox, setLightbox] = useState<{ url: string; alt: string } | null>(null);
 
   const containerVariants: Variants = {
@@ -209,7 +214,7 @@ export function MenuView({
           })}
         </motion.div>
 
-        {(business.whatsapp || business.location || socialLinks.length > 0) && (
+        {(business.whatsapp || business.location || safeSocialLinks.length > 0) && (
           <motion.footer
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -240,7 +245,7 @@ export function MenuView({
                   <img src="/whats.png" alt="WhatsApp" width={28} height={28} />
                 </a>
               )}
-              {socialLinks
+              {safeSocialLinks
                 .filter((link) => getPlatformIcon(link.platform))
                 .map((link) => (
                   <a
@@ -256,9 +261,9 @@ export function MenuView({
                 ))}
             </div>
 
-            {socialLinks.some((link) => !getPlatformIcon(link.platform)) && (
+            {safeSocialLinks.some((link) => !getPlatformIcon(link.platform)) && (
               <div className="flex flex-wrap justify-center gap-2">
-                {socialLinks
+                {safeSocialLinks
                   .filter((link) => !getPlatformIcon(link.platform))
                   .map((link) => (
                     <a
