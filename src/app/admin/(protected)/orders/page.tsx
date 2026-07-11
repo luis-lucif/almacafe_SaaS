@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { createClient } from "@/lib/supabase/client";
-import { Clock, CheckCircle, Coffee, Check, Play, Bell, AlertTriangle, ChevronDown } from "lucide-react";
+import { Clock, CheckCircle, Coffee, Check, Play, Bell, AlertTriangle, ChevronDown, Trash2 } from "lucide-react";
 import type { Tables } from "@/lib/supabase/types";
 
 type Order = Tables<"orders">;
@@ -211,6 +211,32 @@ export default function AdminOrdersPage() {
     }
   }
 
+  // Eliminar un pedido (solo permitido para pendientes o en preparación)
+  async function deleteOrder(orderId: string) {
+    if (!confirm("¿Estás seguro de que quieres eliminar este pedido permanentemente?")) return;
+
+    const supabase = createClient();
+    // Optimista: lo sacamos de pantalla inmediatamente
+    setOrders((prev) => prev.filter((o) => o.id !== orderId));
+
+    try {
+      const { error } = await supabase
+        .from("orders")
+        .delete()
+        .eq("id", orderId);
+
+      if (error) throw error;
+    } catch (err: any) {
+      alert("Error al eliminar el pedido: " + err.message);
+      // Revertir si hay error volviendo a consultar
+      const { data } = await supabase
+        .from("orders")
+        .select("*")
+        .order("created_at", { ascending: false });
+      if (data) setOrders(data);
+    }
+  }
+
   function renderOrderCard(order: Order) {
     const items = (order.items as unknown as OrderItem[]) || [];
     const timeAgo = Math.max(0, Math.floor((Date.now() - new Date(order.created_at).getTime()) / 60000));
@@ -255,40 +281,53 @@ export default function AdminOrdersPage() {
         </div>
 
         {/* Footer / Actions */}
-        <div className="mt-auto pt-3 border-t border-sand/30 flex justify-end gap-2">
-          {order.status === "pending" && (
+        <div className="mt-auto pt-3 border-t border-sand/30 flex items-center justify-between gap-2">
+          {(order.status === "pending" || order.status === "preparing") && (
             <button
-              onClick={() => updateOrderStatus(order.id, "preparing")}
-              className="flex items-center gap-1 text-xs font-sans font-semibold bg-copper text-white rounded-full px-4 py-2 hover:opacity-90 active:scale-95 transition-all shadow-sm"
+              onClick={() => deleteOrder(order.id)}
+              className="flex items-center gap-1.5 text-xs font-sans font-semibold text-red-500 hover:text-red-600 hover:bg-red-50 active:scale-95 transition-all rounded-full px-2.5 py-1.5 border border-transparent hover:border-red-100"
+              title="Eliminar Pedido"
             >
-              <Play size={12} fill="white" />
-              Preparar
+              <Trash2 size={14} />
+              <span>Eliminar</span>
             </button>
           )}
-          {order.status === "preparing" && (
-            <button
-              onClick={() => updateOrderStatus(order.id, "delivered")}
-              className="flex items-center gap-1 text-xs font-sans font-semibold bg-emerald-500 text-white rounded-full px-4 py-2 hover:bg-emerald-600 active:scale-95 transition-all shadow-sm"
-            >
-              <Check size={12} strokeWidth={3} />
-              Entregar
-            </button>
-          )}
-          {order.status === "delivered" && (
-            <button
-              onClick={() => updateOrderStatus(order.id, "completed")}
-              className="flex items-center gap-1 text-xs font-sans font-semibold bg-coffee text-white rounded-full px-4 py-2 hover:opacity-90 active:scale-95 transition-all shadow-sm"
-            >
-              <CheckCircle size={12} />
-              Cobrar / Cerrar
-            </button>
-          )}
-          {order.status === "completed" && (
-            <span className="text-xs font-sans font-semibold text-emerald-600 flex items-center gap-1">
-              <CheckCircle size={14} />
-              Pedido Completado
-            </span>
-          )}
+          
+          <div className="flex gap-2 ml-auto">
+            {order.status === "pending" && (
+              <button
+                onClick={() => updateOrderStatus(order.id, "preparing")}
+                className="flex items-center gap-1 text-xs font-sans font-semibold bg-copper text-white rounded-full px-4 py-2 hover:opacity-90 active:scale-95 transition-all shadow-sm"
+              >
+                <Play size={12} fill="white" />
+                Preparar
+              </button>
+            )}
+            {order.status === "preparing" && (
+              <button
+                onClick={() => updateOrderStatus(order.id, "delivered")}
+                className="flex items-center gap-1 text-xs font-sans font-semibold bg-emerald-500 text-white rounded-full px-4 py-2 hover:bg-emerald-600 active:scale-95 transition-all shadow-sm"
+              >
+                <Check size={12} strokeWidth={3} />
+                Entregar
+              </button>
+            )}
+            {order.status === "delivered" && (
+              <button
+                onClick={() => updateOrderStatus(order.id, "completed")}
+                className="flex items-center gap-1 text-xs font-sans font-semibold bg-coffee text-white rounded-full px-4 py-2 hover:opacity-90 active:scale-95 transition-all shadow-sm"
+              >
+                <CheckCircle size={12} />
+                Cobrar / Cerrar
+              </button>
+            )}
+            {order.status === "completed" && (
+              <span className="text-xs font-sans font-semibold text-emerald-600 flex items-center gap-1">
+                <CheckCircle size={14} />
+                Pedido Completado
+              </span>
+            )}
+          </div>
         </div>
       </div>
     );
