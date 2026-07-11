@@ -24,6 +24,7 @@ export type Database = {
           name: string
           owner_id: string
           whatsapp: string | null
+          whatsapp_orders: string | null
         }
         Insert: {
           color_background?: string
@@ -36,6 +37,7 @@ export type Database = {
           name: string
           owner_id: string
           whatsapp?: string | null
+          whatsapp_orders?: string | null
         }
         Update: {
           color_background?: string
@@ -48,8 +50,41 @@ export type Database = {
           name?: string
           owner_id?: string
           whatsapp?: string | null
+          whatsapp_orders?: string | null
         }
         Relationships: []
+      }
+      business_tables: {
+        Row: {
+          id: string
+          business_id: string
+          name: string
+          is_active: boolean
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          business_id: string
+          name: string
+          is_active?: boolean
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          business_id?: string
+          name?: string
+          is_active?: boolean
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "business_tables_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          }
+        ]
       }
       categories: {
         Row: {
@@ -173,6 +208,54 @@ export type Database = {
             referencedRelation: "businesses"
             referencedColumns: ["id"]
           },
+        ]
+      }
+      orders: {
+        Row: {
+          business_id: string
+          created_at: string
+          id: string
+          status: string
+          table_number: string
+          table_id: string | null
+          total: number
+          items: Json
+        }
+        Insert: {
+          business_id: string
+          created_at?: string
+          id?: string
+          status?: string
+          table_number: string
+          table_id?: string | null
+          total: number
+          items: Json
+        }
+        Update: {
+          business_id?: string
+          created_at?: string
+          id?: string
+          status?: string
+          table_number?: string
+          table_id?: string | null
+          total?: number
+          items?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orders_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_table_id_fkey"
+            columns: ["table_id"]
+            isOneToOne: false
+            referencedRelation: "business_tables"
+            referencedColumns: ["id"]
+          }
         ]
       }
     }

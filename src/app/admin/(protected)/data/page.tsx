@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { MapPin, MessageCircle } from "lucide-react";
+import { MapPin, MessageCircle, ShoppingBag } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { updateData } from "./actions";
 
@@ -40,7 +40,7 @@ export default async function AdminDataPage({
         <label className="flex flex-col gap-1.5 text-sm font-sans">
           <span className="flex items-center gap-1.5 font-medium text-coffee/80">
             <MessageCircle size={15} strokeWidth={1.5} className="text-copper" />
-            WhatsApp
+            WhatsApp de contacto
           </span>
           <input
             name="whatsapp"
@@ -48,6 +48,26 @@ export default async function AdminDataPage({
             placeholder="Solo números, con código de país. Ej: 5491122334455"
             className="rounded-xl border border-sand/50 bg-white/70 px-4 py-3 text-sm outline-none transition-colors focus:border-copper focus:ring-2 focus:ring-copper/20"
           />
+          <span className="text-xs text-coffee/50">
+            Es el ícono de WhatsApp que se muestra en el pie del menú.
+          </span>
+        </label>
+
+        <label className="flex flex-col gap-1.5 text-sm font-sans">
+          <span className="flex items-center gap-1.5 font-medium text-coffee/80">
+            <ShoppingBag size={15} strokeWidth={1.5} className="text-copper" />
+            WhatsApp para pedidos
+          </span>
+          <input
+            name="whatsapp_orders"
+            defaultValue={business.whatsapp_orders ?? ""}
+            placeholder="Solo números, con código de país. Ej: 5491122334455"
+            className="rounded-xl border border-sand/50 bg-white/70 px-4 py-3 text-sm outline-none transition-colors focus:border-copper focus:ring-2 focus:ring-copper/20"
+          />
+          <span className="text-xs text-coffee/50">
+            A este número llega el botón &quot;Pedir&quot; del menú. Si lo dejás vacío, se usa el
+            WhatsApp de contacto.
+          </span>
         </label>
 
         <label className="flex flex-col gap-1.5 text-sm font-sans">

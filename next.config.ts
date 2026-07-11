@@ -30,7 +30,7 @@ const nextConfig: NextConfig = {
         headers: [
           {
             key: "Content-Security-Policy",
-            value: `default-src 'self'; img-src 'self' https://nycdwzgkbstejuqxngog.supabase.co data:; script-src ${scriptSrc}; style-src 'self' 'unsafe-inline'; connect-src 'self' https://nycdwzgkbstejuqxngog.supabase.co; frame-ancestors 'none';`,
+            value: `default-src 'self'; img-src 'self' https://nycdwzgkbstejuqxngog.supabase.co data:; script-src ${scriptSrc}; style-src 'self' 'unsafe-inline'; connect-src 'self' https://nycdwzgkbstejuqxngog.supabase.co wss://nycdwzgkbstejuqxngog.supabase.co; frame-ancestors 'none';`,
           },
           { key: "X-Frame-Options", value: "DENY" },
           { key: "X-Content-Type-Options", value: "nosniff" },
