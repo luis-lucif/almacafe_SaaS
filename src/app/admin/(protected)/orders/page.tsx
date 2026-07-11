@@ -5,6 +5,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { createClient } from "@/lib/supabase/client";
 import { Clock, CheckCircle, Coffee, Check, Play, Bell, AlertTriangle, ChevronDown, Trash2 } from "lucide-react";
 import type { Tables } from "@/lib/supabase/types";
+import DeleteOrderModal from "@/components/DeleteOrderModal";
 
 type Order = Tables<"orders">;
 
@@ -46,6 +47,8 @@ export default function AdminOrdersPage() {
   const [activeTab, setActiveTab] = useState<"pending" | "preparing" | "delivered" | "completed">("pending");
   const [toasts, setToasts] = useState<{ id: string; table: string; total: number }[]>([]);
   const [collapsedDays, setCollapsedDays] = useState<Set<string>>(new Set());
+  const [selectedOrderForDelete, setSelectedOrderForDelete] = useState<Order | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
   const audioContextAllowed = useRef(false);
 
   function toggleDay(dateKey: string) {
@@ -211,13 +214,21 @@ export default function AdminOrdersPage() {
     }
   }
 
+  // Abrir modal de confirmación para eliminar
+  function requestDeleteOrder(order: Order) {
+    setDeleteError(null);
+    setSelectedOrderForDelete(order);
+  }
+
   // Eliminar un pedido (solo permitido para pendientes o en preparación)
-  async function deleteOrder(orderId: string) {
-    if (!confirm("¿Estás seguro de que quieres eliminar este pedido permanentemente?")) return;
+  async function confirmDeleteOrder() {
+    if (!selectedOrderForDelete) return;
+    const orderId = selectedOrderForDelete.id;
 
     const supabase = createClient();
     // Optimista: lo sacamos de pantalla inmediatamente
     setOrders((prev) => prev.filter((o) => o.id !== orderId));
+    setSelectedOrderForDelete(null);
 
     try {
       const { error } = await supabase
@@ -227,7 +238,7 @@ export default function AdminOrdersPage() {
 
       if (error) throw error;
     } catch (err: any) {
-      alert("Error al eliminar el pedido: " + err.message);
+      setDeleteError(err.message);
       // Revertir si hay error volviendo a consultar
       const { data } = await supabase
         .from("orders")
@@ -284,7 +295,7 @@ export default function AdminOrdersPage() {
         <div className="mt-auto pt-3 border-t border-sand/30 flex items-center justify-between gap-2">
           {(order.status === "pending" || order.status === "preparing") && (
             <button
-              onClick={() => deleteOrder(order.id)}
+              onClick={() => requestDeleteOrder(order)}
               className="flex items-center gap-1.5 text-xs font-sans font-semibold text-red-500 hover:text-red-600 hover:bg-red-50 active:scale-95 transition-all rounded-full px-2.5 py-1.5 border border-transparent hover:border-red-100"
               title="Eliminar Pedido"
             >
@@ -434,6 +445,20 @@ export default function AdminOrdersPage() {
           {filteredOrders.map((order) => renderOrderCard(order))}
         </div>
       )}
+
+      {/* Modal de confirmación para eliminar */}
+      <DeleteOrderModal
+        open={selectedOrderForDelete !== null}
+        onClose={() => { setSelectedOrderForDelete(null); setDeleteError(null); }}
+        onConfirm={confirmDeleteOrder}
+        order={selectedOrderForDelete ? {
+          table_number: selectedOrderForDelete.table_number,
+          total: selectedOrderForDelete.total,
+          items: (selectedOrderForDelete.items as any[]) || [],
+          created_at: selectedOrderForDelete.created_at,
+        } : null}
+        error={deleteError}
+      />
 
       <div className="fixed bottom-4 right-4 z-50 flex flex-col gap-2 w-full max-w-xs">
         <AnimatePresence>
